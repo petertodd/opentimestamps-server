@@ -155,9 +155,11 @@ class LevelDbCalendar:
 
         self.__put_timestamp(existing_timestamp, batch)
 
-    def add(self, new_timestamp):
+    def add_timestamps(self, new_timestamps):
         batch = leveldb.WriteBatch()
-        self.__add_timestamp(new_timestamp, batch)
+        for new_timestamp in new_timestamps:
+            logging.debug("Adding timestamp %r to LevelDB calendar" % new_timestamp)
+            self.__add_timestamp(new_timestamp, batch)
         self.db.Write(batch, sync = True)
 
 class Calendar:
@@ -184,6 +186,6 @@ class Calendar:
         """Get commitment timestamps(s)"""
         return self.db[commitment]
 
-    def add_commitment_timestamp(self, timestamp):
+    def add_commitment_timestamps(self, timestamps):
         """Add a timestamp for a commitment"""
-        self.db.add(timestamp)
+        self.db.add_timestamps(timestamps)
