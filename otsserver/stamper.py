@@ -274,19 +274,29 @@ class Stamper:
 
         # Send the first transaction even if we don't have a new block
         if prev_tx and (new_blocks or not self.unconfirmed_txs):
-            # Update the most recent timestamp transaction with new commitments
-            commitment_timestamps = [Timestamp(commitment) for commitment in self.pending_commitments]
+            commitment_timestamps = None
+            tip_timestamp = None
 
-            # Remember that commitment_timestamps contains raw commitments,
-            # which are longer than necessary, so we sha256 them before passing
-            # them to make_merkle_tree, which concatenates whatever it gets (or
-            # for the matter, returns what it gets if there's only one item for
-            # the tree!)
-            commitment_digest_timestamps = [stamp.ops.add(OpSHA256()) for stamp in commitment_timestamps]
+            if not self.unconfirmed_txs:
+                # Update the most recent timestamp transaction with new commitments
+                commitment_timestamps = [Timestamp(commitment) for commitment in self.pending_commitments]
 
-            logging.debug("Making merkle tree")
-            tip_timestamp = make_merkle_tree(commitment_digest_timestamps)
-            logging.debug("Done making merkle tree")
+                # Remember that commitment_timestamps contains raw commitments,
+                # which are longer than necessary, so we sha256 them before passing
+                # them to make_merkle_tree, which concatenates whatever it gets (or
+                # for the matter, returns what it gets if there's only one item for
+                # the tree!)
+                commitment_digest_timestamps = [stamp.ops.add(OpSHA256()) for stamp in commitment_timestamps]
+
+                logging.debug("Making merkle tree")
+                tip_timestamp = make_merkle_tree(commitment_digest_timestamps)
+                logging.debug("Done making merkle tree")
+
+            else:
+                # Because the internet archive stamper stamps so many txs at a
+                # time, reuse from the previous tx so we don't run out of ram
+                commitment_timestamps = self.unconfirmed_txs[-1].commitment_timestamps
+                tip_timestamp = self.unconfirmed_txs[-1].tip_timestamp
 
             # make_merkle_tree() seems to take long enough on really big adds
             # that the proxy dies
