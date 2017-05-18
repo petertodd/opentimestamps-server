@@ -79,7 +79,7 @@ class JournalWriter(Journal):
 
 class LevelDbCalendar:
     def __init__(self, path):
-        self.db = leveldb.LevelDB(path)
+        self.db = leveldb.LevelDB(path, block_cache_size=1 << 30)
 
     def __contains__(self, msg):
         try:
